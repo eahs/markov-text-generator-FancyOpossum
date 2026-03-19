@@ -31,9 +31,18 @@ public class Chain
     /// <param name="sentence"></param>
     public void AddSentence(string? sentence)
     {
-        // TODO: Break sentence up into word pairs
-        // TODO: Add each word pair to the chain by calling AddPair
-        // TODO: The last word of any sentence will be paired up with an empty string to show that it is the end of the sentence
+        if (string.IsNullOrWhiteSpace(sentence))
+            return;
+
+        string[] words = sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        for (int i = 0; i < words.Length - 1; i++)
+        {
+            AddPair(words[i], words[i + 1]);
+        }
+
+        // Last word → end of sentence
+        AddPair(words[^1], "");
     }
 
     // Adds a pair of words to the chain that will appear in order
@@ -77,16 +86,26 @@ public class Chain
     /// <returns></returns>
     public string GetNextWord(string word)
     {
-        if (Words.TryGetValue(word, out List<Word>? value))
+        if (Words.TryGetValue(word, out List<Word>? choices))
         {
-            List<Word> choices = value;
-            double test = _rand.NextDouble();
+            double randValue = _rand.NextDouble();
+            double cumulative = 0.0;
 
-            Console.WriteLine("I picked the number " + test);
+            foreach (Word choice in choices)
+            {
+                cumulative += choice.Probability;
+
+                if (randValue <= cumulative)
+                {
+                    return choice.ToString();
+                }
+            }
         }
 
-        return "idkbbq";
+        return "";
     }
+
+
 
     /// <summary>
     /// Generates a full randomly generated sentence based that starts with
@@ -96,7 +115,16 @@ public class Chain
     /// <returns></returns>
     public string GenerateSentence(string startingWord)
     {
-        return "";
+        List<string> sentence = new();
+        string current = startingWord;
+
+        while (!string.IsNullOrEmpty(current))
+        {
+            sentence.Add(current);
+            current = GetNextWord(current);
+        }
+
+        return string.Join(" ", sentence);
     }
 
     /// <summary>
